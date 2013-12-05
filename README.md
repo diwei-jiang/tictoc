@@ -1,4 +1,10 @@
 tictoc
 ======
 
-A tic-toc game using alpha-beta pruning as AI against whoever you are...
+## Requirement
+
+Ruby > 1.9.3  
+shoes
+
+## To run
+shoes chess.rb
