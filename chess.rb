@@ -14,7 +14,7 @@ module OhMyChess
     attr_accessor :board, :difficulty
         
     def initialize
-      @agent          = AlphaBeta.new
+      @agent          = AlphaBeta.new new_board
       @player_1       = Player.new(:black, :human)
       @player_2       = Player.new(:white, :robot)
       @board          = new_board
@@ -41,8 +41,9 @@ module OhMyChess
       @current_player = next_player
       if @current_player.role == :robot
         # AI
-        lay_piece([1,2])
-        next_turn
+        coord = @agent.find_best_move @board, @player_2.color, @player_1.color
+        lay_piece(coord)
+        next_turn if !finished?
       end
     end
 
@@ -73,7 +74,6 @@ module OhMyChess
 
     def calculate_current_winner player, coords
       color = player.piece
-      name = player.role
 
       # vertical
       if @board[coords[0]][0] == color && @board[coords[0]][1] == color && 
@@ -211,7 +211,7 @@ Shoes.app :width => 333, :height => 343 do
         GAME.next_turn if !GAME.finished?
         draw_board
       rescue => e
-        draw_board(e.message)
+        draw_board(e)
       end
     else
       # alert("Not a piece.")
