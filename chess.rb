@@ -9,7 +9,7 @@ module OhMyChess
   LEFT_OFFSET = 12
 
   class Game
-    BOARD_SIZE = [5,4] # [row, col]
+    BOARD_SIZE = [5,4] # [col, row]
 
     attr_accessor :board, :difficulty
         
