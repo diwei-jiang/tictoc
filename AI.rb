@@ -8,7 +8,7 @@ class AlphaBeta
   ONE_WAY_ONE = 10        # could be one way two in next step
   GOOD_POS = 3            # in the critical aera
 
-  DEPTH = 2
+  DEPTH = 1
 
   attr_accessor :sandbox_board, :best_step, :difficulty
 
@@ -238,6 +238,11 @@ class AlphaBeta
     # diagonal
     return INFINITY if checker [0,0], [3,3], 4, @max_color
     return INFINITY if checker [1,0], [4,3], 4, @max_color
+    return INFINITY if checker [3,0], [0,3], 4, @max_color
+    return INFINITY if checker [4,0], [1,3], 4, @max_color
+
+    return -INFINITY if checker [0,0], [3,3], 4, @min_color
+    return -INFINITY if checker [1,0], [4,3], 4, @min_color
     return -INFINITY if checker [3,0], [0,3], 4, @min_color
     return -INFINITY if checker [4,0], [1,3], 4, @min_color
 
@@ -269,26 +274,25 @@ class AlphaBeta
 end
 
 
-def new_board val=0
-  Array.new(5) do # build each cols L to R
-    Array.new(4) do # insert cells in each col
-      val
-    end
-  end
-end
+# def new_board val=0
+#   Array.new(5) do # build each cols L to R
+#     Array.new(4) do # insert cells in each col
+#       val
+#     end
+#   end
+# end
 
 
-board = new_board 0
+# board = new_board 0
 
-agent = AlphaBeta.new board
 
-# board[4][0] = 1
-# board[2][0] = 1
+# board[4][0] = 2
+
 # board[3][0] = 1
-# board[0][0] = 2
-# board[1][1] = 2
-# board[2][2] = 2
 
-p agent.three
+# agent = AlphaBeta.new board
+
+# agent.find_best_move board, 1, 2
+
 
 
