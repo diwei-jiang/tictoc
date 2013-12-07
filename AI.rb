@@ -1,37 +1,41 @@
 class AlphaBeta
 
-  INFINITY = 9999
-  LIVE_THREE = 400
-  LIVE_TWO = 150
-  DEAD_THREE = 70
-  DEAD_TWO = 40
-  GOOD_POS = 30
+  INFINITY = 9999         # win
+  THREE = 400             # live three or one way three
+  LIVE_TWO = 100          # could be live three in next step
+  ONE_WAY_TWO = 40        # could be one way three in next step
+  LIVE_ONE = 15           # could be live two in next step
+  ONE_WAY_ONE = 10        # could be one way two in next step
+  GOOD_POS = 3            # in the critical aera
 
-  DIFFCULTY = 3
+  DEPTH = 2
 
-  attr_accessor :sandbox_board, :history
+  attr_accessor :sandbox_board, :best_step, :difficulty
 
-  def initialize sandbox_board
-    @sandbox_board = sandbox_board
+  def initialize _board, _difficulty=1
+    @sandbox_board = _board
     @critical_area = [[1,1],[2,1],[3,1],[1,2],[2,2],[3,2]]
-    @history = Array.new
+    @best_step = []
+    @difficulty = _difficulty
+    @max_color = 1
+    @min_color = 2
   end
 
   # alphabeta
   # return [column, row]
-  def find_best_move board, max_color, min_color
-    @sandbox_board = board.clone
+  def find_best_move _board, max_color, min_color
+    @sandbox_board = _board.clone
     @max_color = max_color
     @min_color = min_color
-    max_score -INFINITY, INFINITY, 1
-    return @history.pop
+    max_score -INFINITY, INFINITY, 0
+    p @best_step.last
+    return @best_step.pop if @best_step.any?
+    remaining_moves.sample
   end
 
   def max_score alpha, beta, counter
 
-    # result = terminal_test
-    # return result if result
-    if counter >= DIFFCULTY
+    if counter >= @difficulty+DEPTH
       return get_value
     end
 
@@ -42,10 +46,9 @@ class AlphaBeta
       tmp = min_score(alpha, beta, counter+1)
       if tmp > score
         score = tmp
-        if  counter == 1
-          @history.pop if @history.any?
-          @history.push coord
-          p @history
+        if  counter == 0
+          @best_step.pop if @best_step.any?
+          @best_step.push coord
         end
       end
       # score = [min_score(alpha, beta, counter+1), score].max
@@ -53,15 +56,13 @@ class AlphaBeta
       return score if score >= beta
       alpha = [alpha, score].max
     end
-
+    p "max: #{counter}, #{score}"
     score
   end
 
   def min_score alpha, beta, counter
-    # result = terminal_test
-    # return result if result
 
-    if counter >= DIFFCULTY
+    if counter >= @difficulty+DEPTH
       return get_value
     end
 
@@ -69,12 +70,14 @@ class AlphaBeta
 
     remaining_moves.each do |coord|
       make_a_move coord, @min_color
+
       score = [max_score(alpha, beta, counter+1), score].min
       undo_a_move coord
-      return score if score <= alpha || counter > DIFFCULTY
+      return score if score <= alpha
       beta = [beta, score].min
     end
 
+    p "min: #{counter}, #{score}"
     score
   end
 
@@ -92,90 +95,176 @@ class AlphaBeta
     score = winner?
     return score if score != 0
 
-    score = Hash.new
+    score = { :gpos => 0, 
+              :three => 0,
+              :ltwo => 0, :otwo => 0,
+              :lone => 0, :ooone => 0 }
 
-    good_pos score
+    # start rating
+    # good position
+    score[:gpos] = good_pos
 
-    all_three score
-
-    # max_score['dthree'] = dead_three @max_color
-    # max_score['dthree'] = dead_three @min_color
+    # check three
+    score[:three] = three
 
 
-    GOOD_POS*score['gpos']
+    p GOOD_POS*score[:gpos]+
+    THREE*score[:three]+
+    LIVE_TWO*score[:ltwo]+ONE_WAY_TWO*score[:otwo]+
+    LIVE_ONE*score[:lone]+ONE_WAY_ONE*score[:ooone]
   end
 
-  def good_pos hash
-    hash['gpos'] = 0
+  # def check_vertical score, coord, color
+  #   blocker = 0
+  #   (-3..3).each do |i|
+
+  #   end
+  # end
+
+  # check three
+  def three
+    bo = @sandbox_board
+    three_score = 0
+    # vertical
+    bo.each do |col|
+      # [1110],[0111],[1011],[1101]
+      if (col[0]==@max_color && col[1]==@max_color && 
+        col[2]==@max_color && col[3]==0) ||
+        (col[1]==@max_color && col[2]==@max_color && 
+        col[3]==@max_color && col[0]==0) ||
+        (col[0]==@max_color && col[2]==@max_color && 
+        col[3]==@max_color && col[1]==0) ||
+        (col[0]==@max_color && col[1]==@max_color && 
+        col[3]==@max_color && col[2]==0)
+        three_score+=1
+      elsif (col[0]==@min_color && col[1]==@min_color && 
+        col[2]==@min_color && col[3]==0) ||
+        (col[1]==@min_color && col[2]==@min_color && 
+        col[3]==@min_color && col[0]==0) ||
+        (col[0]==@min_color && col[2]==@min_color && 
+        col[3]==@min_color && col[1]==0) ||
+        (col[0]==@min_color && col[1]==@min_color && 
+        col[3]==@min_color && col[2]==0)
+        three_score-=1
+      end
+    end
+
+    # horizontal
+    (0..3).each do |row|
+      # [1110*],[0111*],[*1110],[*0111],
+      ## [1011*],[1101*],[*1011],[*1101]
+      if (bo[0][row]==@max_color &&
+        bo[1][row]==@max_color &&
+        bo[2][row]==@max_color &&
+        bo[3][row]==0) ||
+      (bo[2][row]==@max_color &&
+        bo[3][row]==@max_color &&
+        bo[4][row]==@max_color &&
+        bo[1][row]==0)
+        three_score+=1
+      elsif (bo[0][row]==@min_color &&
+        bo[1][row]==@min_color &&
+        bo[2][row]==@min_color &&
+        bo[3][row]==0) || 
+      (bo[2][row]==@min_color &&
+        bo[3][row]==@min_color &&
+        bo[4][row]==@min_color &&
+        bo[1][row]==0)
+        three_score+=1
+      elsif (bo[1][row]==@max_color &&
+        bo[2][row]==@max_color &&
+        bo[3][row]==@max_color &&
+        (bo[0][row]==0||bo[4][row]==0))
+        three_score+=2
+      elsif (bo[1][row]==@min_color &&
+        bo[2][row]==@min_color &&
+        bo[3][row]==@min_color &&
+        (bo[0][row]==0||bo[4][row]==0))
+        three_score-=2
+      end
+    end
+
+    # diagonal
+
+    three_score+=1 if checker([1, 1], [3, 3], 3, @max_color)&&bo[0][0] == 0
+    three_score+=1 if checker([2, 1], [4, 3], 3, @max_color)&&bo[1][0] == 0
+    three_score-=1 if checker([1, 1], [3, 3], 3, @min_color)&&bo[0][0] == 0
+    three_score-=1 if checker([2, 1], [4, 3], 3, @min_color)&&bo[1][0] == 0
+
+    three_score+=1 if checker([0, 3], [2, 1], 3, @max_color)&&bo[3][0] == 0
+    three_score+=1 if checker([1, 3], [3, 1], 3, @max_color)&&bo[4][0] == 0
+    three_score-=1 if checker([0, 3], [2, 1], 3, @min_color)&&bo[3][0] == 0
+    three_score-=1 if checker([1, 3], [3, 1], 3, @min_color)&&bo[4][0] == 0
+ 
+    three_score+=1 if checker([1, 2], [3, 0], 3, @max_color)&&bo[0][3] == 0
+    three_score+=1 if checker([2, 2], [4, 0], 3, @max_color)&&bo[1][3] == 0
+    three_score-=1 if checker([1, 2], [3, 0], 3, @min_color)&&bo[0][3] == 0
+    three_score-=1 if checker([2, 2], [4, 0], 3, @min_color)&&bo[1][3] == 0
+
+    three_score+=1 if checker([0, 0], [2, 2], 3, @max_color)&&bo[3][3] == 0
+    three_score+=1 if checker([1, 0], [3, 2], 3, @max_color)&&bo[4][3] == 0
+    three_score-=1 if checker([0, 0], [2, 2], 3, @min_color)&&bo[3][3] == 0
+    three_score-=1 if checker([1, 0], [3, 2], 3, @min_color)&&bo[4][3] == 0
+
+
+    three_score
+  end
+
+  def good_pos
+    pos_score = 0
     @critical_area.each do |pos|
-      hash['gpos']+=1 if @sandbox_board[pos[0]][pos[1]] == @max_color
-      hash['gpos']-=1 if @sandbox_board[pos[0]][pos[1]] == @min_color
+      pos_score+=1 if @sandbox_board[pos[0]][pos[1]] == @max_color
+      pos_score-=1 if @sandbox_board[pos[0]][pos[1]] == @min_color
     end
-  end
-
-  def all_three hash
-    hash['dthree'] = hash['lthree'] = 0
-    
+    pos_score
   end
 
 
-  def terminal_test
-    if (utility = winner?)
-      return utility
-    end
-
-    if remaining_moves.count == 0
-      return 0
-    end
-
-    false
-  end
 
   def winner?
     # vertical
     (0..4).to_a.each do |i|
-      return INFINITY if checker [i,0], [i,3], 1
-      return -INFINITY if checker [i,0], [i,3], 2
+      return INFINITY if checker [i,0], [i,3], 4, @max_color
+      return -INFINITY if checker [i,0], [i,3], 4, @min_color
     end
 
     # horizontal
     (0..3).to_a.each do |i|
-      return INFINITY if checker [0,i], [3,i], 1
-      return INFINITY if checker [1,i], [4,i], 1
-      return -INFINITY if checker [0,i], [3,i], 2
-      return -INFINITY if checker [1,i], [4,i], 2
+      return INFINITY if checker [0,i], [3,i], 4, @max_color
+      return INFINITY if checker [1,i], [4,i], 4, @max_color
+      return -INFINITY if checker [0,i], [3,i], 4, @min_color
+      return -INFINITY if checker [1,i], [4,i], 4, @min_color
     end
     # diagonal
-    return INFINITY if checker [0,0], [3,3], 1
-    return INFINITY if checker [1,0], [4,3], 1
-    return -INFINITY if checker [3,0], [0,3], 2
-    return -INFINITY if checker [4,0], [1,3], 2
+    return INFINITY if checker [0,0], [3,3], 4, @max_color
+    return INFINITY if checker [1,0], [4,3], 4, @max_color
+    return -INFINITY if checker [3,0], [0,3], 4, @min_color
+    return -INFINITY if checker [4,0], [1,3], 4, @min_color
 
     0
   end
 
-  def checker start_c, end_c, color
-    step_col = (end_c[0] + 1 - start_c[0])/4
-    step_row = (end_c[1] + 1 - start_c[1])/4
+  def checker start_c, end_c, step, color
+    step_col = (end_c[0] + 1 - start_c[0])/step
+    step_row = (end_c[1] + 1 - start_c[1])/step
 
-    if @sandbox_board[start_c[0]][start_c[1]] == color &&
-      @sandbox_board[start_c[0]+step_col][start_c[1]+step_row] == color &&
-      @sandbox_board[start_c[0]+2*step_col][start_c[1]+2*step_row] == color &&
-      @sandbox_board[start_c[0]+3*step_col][start_c[1]+3*step_row] == color
-      return true
+    (0..step-1).each do |i|
+      if @sandbox_board[start_c[0]+i*step_col][start_c[1]+i*step_row] != color
+        return false
+      end
     end
-    false
+    true
   end
 
 
-  def remaining_moves
+  def remaining_moves _board = @sandbox_board
     remaining_cell = Array.new
-    @sandbox_board.each_with_index do |array, column|
+    _board.each_with_index do |array, column|
       array.each_with_index do |val, row|
         remaining_cell.push([column, row]) if val == 0
       end
     end
-    remaining_cell
+    remaining_cell.shuffle
   end
 end
 
@@ -189,18 +278,17 @@ def new_board val=0
 end
 
 
-# board = new_board 0
+board = new_board 0
 
-# agent = AlphaBeta.new board
+agent = AlphaBeta.new board
 
-# board[0][1] = 1
+# board[4][0] = 1
+# board[2][0] = 1
+# board[3][0] = 1
+# board[0][0] = 2
+# board[1][1] = 2
+# board[2][2] = 2
 
-# p agent.winner?
-
-# p agent.remaining_moves
-
-# p agent.find_best_move board, 1, 2
-
-# p agent.history
+p agent.three
 
 

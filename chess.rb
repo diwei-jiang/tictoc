@@ -11,14 +11,13 @@ module OhMyChess
   class Game
     BOARD_SIZE = [5,4] # [col, row]
 
-    attr_accessor :board, :difficulty
+    attr_accessor :board, :agent
         
     def initialize
-      @agent          = AlphaBeta.new new_board
       @player_1       = Player.new(:black, :human)
       @player_2       = Player.new(:white, :robot)
       @board          = new_board
-      @difficulty     = 1
+      @agent          = AlphaBeta.new new_board
       @game_status    = :running
     end
 
@@ -31,9 +30,7 @@ module OhMyChess
     end
 
     def available_moves?
-      @board.each do |pos|
-        return true if pos == 0
-      end
+      return true if @agent.remaining_moves(@board).count == 0
       false
     end
 
@@ -41,7 +38,7 @@ module OhMyChess
       @current_player = next_player
       if @current_player.role == :robot
         # AI
-        coord = @agent.find_best_move @board, @player_2.color, @player_1.color
+        coord = @agent.find_best_move @board, @player_2.piece, @player_1.piece
         lay_piece(coord)
         next_turn if !finished?
       end
@@ -128,13 +125,14 @@ module OhMyChess
   def status_bar(message)
     stack :margin => 10 do
       background white
-      para span("Difficulty #{GAME.difficulty} | #{message}", :stroke => red, :font => "Trebuchet 20px bold"), :margin => 4
+      para span("Difficulty #{GAME.agent.difficulty} | #{message}", :stroke => red, :font => "Trebuchet 20px bold"), :margin => 4
     end
   end
 
-  def draw_board(message="#{GAME.current_player.role} turn")
+  def draw_board(message="#{GAME.current_player.role} [turn]")
     clear do
       background black
+      message = "Tie!" if GAME.available_moves?
       message = "#{GAME.current_player.role} win!!" if GAME.finished?
       status_bar(message)
       stack :margin => 10 do
@@ -164,13 +162,13 @@ module OhMyChess
       button("-",
         :bottom => 0, 
         :left => 0) do 
-        GAME.difficulty -= 1 if GAME.difficulty > 1
+        GAME.agent.difficulty -= 1 if GAME.agent.difficulty > 1
         draw_board
       end
       button("+",
         :bottom => 0, 
         :left => 60) do 
-        GAME.difficulty += 1 if GAME.difficulty < 3
+        GAME.agent.difficulty += 1 if GAME.agent.difficulty < 3
         draw_board
       end
     end
@@ -203,7 +201,7 @@ Shoes.app :width => 333, :height => 343 do
   extend OhMyChess
 
   draw_board
-  
+
   click { |button, x, y| 
     if (coords = find_piece(x,y)) && !GAME.finished?
       begin
