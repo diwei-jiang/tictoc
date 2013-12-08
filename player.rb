@@ -5,7 +5,8 @@ class Player
     @color = color
     @role  = role
   end
-          
+
+  # return the color value
   def piece
     @color == :black ? 1 : 2
   end

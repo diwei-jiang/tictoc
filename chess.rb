@@ -3,6 +3,7 @@ load 'player.rb'
 
 module OhMyChess
 
+  # constant
   PIECE_WIDTH  = 62
   PIECE_HEIGHT = 62
   TOP_OFFSET = 47
@@ -23,19 +24,19 @@ module OhMyChess
       @human_first    = _human_first
     end
 
+    # is the game end?
     def finished?
       @game_status == :finished
     end
 
-    def lock?
-      @game_lock == :lock
-    end
-
+    # is there any avaliable move
     def available_moves?
       return true if @agent.remaining_moves(@board).count == 0
       false
     end
 
+
+    # give the control to next player
     def next_turn
       @current_player = next_player
       if @current_player.role == :robot
@@ -46,10 +47,12 @@ module OhMyChess
       end
     end
 
+    # human goes first?
     def human_first?
       @human_first
     end
 
+    # return who is playing
     def current_player
       if human_first?
         @current_player ||= @human
@@ -71,6 +74,7 @@ module OhMyChess
       end
     end
     
+    # place a piece
     def lay_piece(coords)
       piece = current_player.piece
       opp_piece = current_player.opp_piece
@@ -79,6 +83,7 @@ module OhMyChess
       @game_status = :finished if calculate_current_winner current_player, coords
     end
 
+    # check out who wins
     def calculate_current_winner player, coords
       color = player.piece
 
@@ -132,6 +137,7 @@ module OhMyChess
     # end of Game
   end
 
+  # show the message of the game, like who is winner
   def status_bar(message)
     stack :margin => 10 do
       background white
@@ -139,6 +145,8 @@ module OhMyChess
     end
   end
 
+
+  # draw the game board
   def draw_board(message="TIC TOC")
     clear do
       background black
@@ -169,6 +177,7 @@ module OhMyChess
         end
       end
 
+      # difficulty button
       button("-",
         :bottom => 0, 
         :left => 0) do 
@@ -192,6 +201,7 @@ module OhMyChess
     [((a+1)*PIECE_WIDTH+LEFT_OFFSET), ((b+1)*PIECE_HEIGHT+TOP_OFFSET+12)]
   end
 
+  # find the piece based on the coord user click
   def find_piece(x,y)
     GAME.board.each_with_index { |col_array, col| 
       col_array.each_with_index { |row_array, row| 
@@ -205,7 +215,7 @@ module OhMyChess
 
 end
 
-
+# start of the program
 Shoes.app :width => 333, :height => 343 do
   extend OhMyChess
 

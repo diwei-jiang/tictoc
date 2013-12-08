@@ -1,5 +1,6 @@
 class AlphaBeta
 
+  # pattern weight
   INFINITY = 9999         # win
   THREE = 400             # live three or one way three
   LIVE_TWO = 100          # could be live three in next step
@@ -17,10 +18,12 @@ class AlphaBeta
     @critical_area = [[1,1],[2,1],[3,1],[1,2],[2,2],[3,2]]
     @best_step = []
     @difficulty = _difficulty
-    @max_color = 1
-    @min_color = 2
+    ## for the test
+    # @max_color = 1
+    # @min_color = 2
   end
 
+  # am I go first?
   def me_go_first
     @critical_area.sample
   end
@@ -37,6 +40,7 @@ class AlphaBeta
     remaining_moves.sample
   end
 
+  # MAX
   def max_score alpha, beta, counter
 
     if counter >= @difficulty+DEPTH
@@ -64,6 +68,7 @@ class AlphaBeta
     score
   end
 
+  # MIN
   def min_score alpha, beta, counter
 
     if counter >= @difficulty+DEPTH
@@ -85,10 +90,13 @@ class AlphaBeta
     score
   end
 
+
+  # make a move in sandbox board
   def make_a_move coord, _color
     @sandbox_board[coord[0]][coord[1]] = _color
   end
 
+  # undo a move, for recurrence
   def undo_a_move coord
     @sandbox_board[coord[0]][coord[1]] = 0
   end
@@ -111,21 +119,14 @@ class AlphaBeta
     # check three
     score[:three] = three
 
-
     p GOOD_POS*score[:gpos]+
     THREE*score[:three]+
     LIVE_TWO*score[:ltwo]+ONE_WAY_TWO*score[:otwo]+
     LIVE_ONE*score[:lone]+ONE_WAY_ONE*score[:ooone]
   end
 
-  # def check_vertical score, coord, color
-  #   blocker = 0
-  #   (-3..3).each do |i|
 
-  #   end
-  # end
-
-  # check three
+  # check three, stupid but work ...
   def three
     bo = @sandbox_board
     three_score = 0
@@ -214,6 +215,7 @@ class AlphaBeta
     three_score
   end
 
+  # here is all the good position
   def good_pos
     pos_score = 0
     @critical_area.each do |pos|
@@ -224,7 +226,7 @@ class AlphaBeta
   end
 
 
-
+  # am I win????
   def winner?
     # vertical
     (0..4).to_a.each do |i|
@@ -253,6 +255,8 @@ class AlphaBeta
     0
   end
 
+
+  # check if the same color in a line
   def checker start_c, end_c, step, color
     step_col = (end_c[0] + 1 - start_c[0])/step
     step_row = (end_c[1] + 1 - start_c[1])/step
@@ -266,6 +270,7 @@ class AlphaBeta
   end
 
 
+  # return an array of the avaliable moves in random order
   def remaining_moves _board = @sandbox_board
     remaining_cell = Array.new
     _board.each_with_index do |array, column|
@@ -277,6 +282,12 @@ class AlphaBeta
   end
 end
 
+
+#
+#
+# for unit test
+#
+#
 
 # def new_board val=0
 #   Array.new(5) do # build each cols L to R
