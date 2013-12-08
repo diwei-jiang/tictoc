@@ -7,10 +7,10 @@ class Player
   end
           
   def piece
-    color == :black ? 1 : 2
+    @color == :black ? 1 : 2
   end
           
   def opp_piece
-    color == :black ? 2 : 1
+    @color == :black ? 2 : 1
   end
 end

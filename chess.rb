@@ -13,12 +13,14 @@ module OhMyChess
 
     attr_accessor :board, :agent
         
-    def initialize
-      @player_1       = Player.new(:black, :human)
-      @player_2       = Player.new(:white, :robot)
+    def initialize _human_first=true, _human_color=:black
+      _robot_color = _human_color==:black ? :white : :black
+      @human       = Player.new(_human_color, :human)
+      @robot       = Player.new(_robot_color, :robot)
       @board          = new_board
       @agent          = AlphaBeta.new new_board
       @game_status    = :running
+      @human_first    = _human_first
     end
 
     def finished?
@@ -38,18 +40,26 @@ module OhMyChess
       @current_player = next_player
       if @current_player.role == :robot
         # AI
-        coord = @agent.find_best_move @board, @player_2.piece, @player_1.piece
+        coord = @agent.find_best_move @board, @robot.piece, @human.piece
         lay_piece(coord)
         next_turn if !finished?
       end
     end
 
+    def human_first?
+      @human_first
+    end
+
     def current_player
-      @current_player ||= @player_1
+      if human_first?
+        @current_player ||= @human
+      else
+        @current_player ||= @robot
+      end 
     end
 
     def next_player
-      current_player == @player_1 ? @player_2 : @player_1
+      current_player == @human ? @robot : @human
     end
 
     # Build the array for the board, with zero-based arrays.
@@ -129,7 +139,7 @@ module OhMyChess
     end
   end
 
-  def draw_board(message="#{GAME.current_player.role} [turn]")
+  def draw_board(message="TIC TOC")
     clear do
       background black
       message = "Tie!" if GAME.available_moves?
@@ -193,13 +203,22 @@ module OhMyChess
     return false
   end
 
-  GAME = OhMyChess::Game.new
 end
 
 
 Shoes.app :width => 333, :height => 343 do
   extend OhMyChess
 
+  human_first = confirm("You go first?")
+
+  human_color = confirm("You want black?") ? :black : :white
+
+  GAME = OhMyChess::Game.new human_first, human_color
+
+  unless human_first
+    GAME.lay_piece(GAME.agent.me_go_first)
+    GAME.next_turn
+  end
   draw_board
 
   click { |button, x, y| 
@@ -212,7 +231,7 @@ Shoes.app :width => 333, :height => 343 do
         draw_board(e)
       end
     else
-      # alert("Not a piece.")
+      alert("Not a piece.")
     end
   }
 end

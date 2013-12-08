@@ -21,13 +21,17 @@ class AlphaBeta
     @min_color = 2
   end
 
+  def me_go_first
+    @critical_area.sample
+  end
+
   # alphabeta
   # return [column, row]
   def find_best_move _board, max_color, min_color
     @sandbox_board = _board.clone
     @max_color = max_color
     @min_color = min_color
-    max_score -INFINITY, INFINITY, 0
+    p max_score -INFINITY, INFINITY, 0
     p @best_step.last
     return @best_step.pop if @best_step.any?
     remaining_moves.sample
@@ -287,12 +291,20 @@ end
 
 
 # board[4][0] = 2
+# board[0][0] = 2
+# board[2][1] = 2
+# board[3][1] = 2
+# board[0][3] = 2
 
-# board[3][0] = 1
+# board[1][3] = 1
+# board[1][1] = 1
+# board[1][2] = 1
+# board[2][2] = 1
+# board[3][2] = 1
 
 # agent = AlphaBeta.new board
 
 # agent.find_best_move board, 1, 2
-
+# p agent.get_value
 
 
